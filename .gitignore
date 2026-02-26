@@ -1,0 +1,22 @@
+# Java
+*.class
+*.log
+*.jar
+*.war
+target/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Docker
+.docker/
+data/
+
+# OS
+.DS_Store
+Thumbs.db
