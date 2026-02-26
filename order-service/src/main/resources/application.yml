@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-service
+  
+  # R2DBC PostgreSQL
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/orders_db
+    username: user
+    password: password
+  
+  # MongoDB Reactive
+  data:
+    mongodb:
+      uri: mongodb://admin:password@localhost:27017/orders_audit?authSource=admin
+
+  # Kafka
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: order-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+
+logging:
+  level:
+    org.quind.orderservice: DEBUG
