@@ -36,8 +36,11 @@ public class OrderController {
     }
 
     @GetMapping
-    public reactor.core.publisher.Flux<Order> listOrders(@RequestParam String customerId) {
-        return getOrderUseCase.getByCustomerId(customerId, 0, 10);
+    public reactor.core.publisher.Flux<Order> listOrders(
+            @RequestParam String customerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return getOrderUseCase.getByCustomerId(customerId, page, size);
     }
 
     @PatchMapping("/{id}/cancel")

@@ -42,6 +42,22 @@ public class Order {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void markAsShipped() {
+        if (this.status != OrderStatus.PAID) {
+            throw new IllegalStateException("Solo las órdenes PAID pueden marcarse como enviadas");
+        }
+        this.status = OrderStatus.SHIPPED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markAsDelivered() {
+        if (this.status != OrderStatus.SHIPPED) {
+            throw new IllegalStateException("Solo las órdenes SHIPPED pueden marcarse como entregadas");
+        }
+        this.status = OrderStatus.DELIVERED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void markAsFailed() {
         this.status = OrderStatus.FAILED;
         this.updatedAt = LocalDateTime.now();

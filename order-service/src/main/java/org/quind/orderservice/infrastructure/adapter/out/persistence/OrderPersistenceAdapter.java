@@ -67,7 +67,9 @@ public class OrderPersistenceAdapter implements OrderRepository {
 
         @Override
         public Flux<Order> findByCustomerId(String customerId, int page, int size) {
-                return repository.findByCustomerId(customerId)
+                return repository
+                                .findByCustomerId(customerId,
+                                                org.springframework.data.domain.PageRequest.of(page, size))
                                 .flatMap(e -> findById(e.getId()));
         }
 }
