@@ -6,6 +6,7 @@ import org.quind.notificationservice.infrastructure.adapter.out.persistence.Even
 import org.quind.notificationservice.infrastructure.adapter.out.persistence.MongoEventLogRepository;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -16,20 +17,38 @@ public class GlobalEventListener {
 
     private final MongoEventLogRepository repository;
 
-    @KafkaListener(topics = { "order-created", "order-cancelled", "payment-processed",
+    @KafkaListener(topics = { "order-created", "order-cancelled", "inventory-validated", "payment-processed",
             "payment-failed" }, groupId = "notification-group")
     public void handleEvents(Object message,
-            @org.springframework.messaging.handler.annotation.Header(org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC) String topic) {
-        log.info("Notification Service received event from topic {}: {}", topic, message);
+            @org.springframework.messaging.handler.annotation.Header(org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @org.springframework.messaging.handler.annotation.Header("X-Correlation-ID") byte[] correlationIdBytes) {
+        String correlationId = new String(correlationIdBytes);
+        log.info("Notification Service received event [CorrelationID: {}] from topic {}: {}", correlationId, topic,
+                message);
 
-        EventLogEntity eventLog = EventLogEntity.builder()
-                .eventType(topic)
-                .aggregateId(extractAggregateId(message))
-                .payload(message)
-                .timestamp(LocalDateTime.now())
-                .build();
+        String aggregateId = extractAggregateId(message);
 
-        repository.save(eventLog).subscribe();
+        repository.findByAggregateId(aggregateId)
+                .filter(logEntry -> logEntry.getEventType().equals(topic)
+                        && correlationId.equals(logEntry.getCorrelationId()))
+                .hasElements()
+                .flatMap(exists -> {
+                    if (Boolean.TRUE.equals(exists)) {
+                        log.warn("Evento ya procesado (Idempotencia): {} para aggregate {}", topic, aggregateId);
+                        return Mono.empty();
+                    }
+
+                    EventLogEntity eventLog = EventLogEntity.builder()
+                            .eventType(topic)
+                            .aggregateId(aggregateId)
+                            .payload(message)
+                            .timestamp(LocalDateTime.now())
+                            .correlationId(correlationId)
+                            .build();
+
+                    return repository.save(eventLog);
+                })
+                .subscribe();
     }
 
     private String extractAggregateId(Object message) {
