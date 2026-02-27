@@ -7,6 +7,7 @@ import org.quind.orderservice.domain.port.out.OrderEventPublisher;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -17,17 +18,46 @@ public class KafkaOrderEventPublisher implements OrderEventPublisher {
 
     @Override
     public Mono<Void> publishOrderCreated(Order order) {
-        return Mono.fromRunnable(() -> {
-            log.info("Publishing OrderCreated event for order: {}", order.getId());
-            kafkaTemplate.send("order-created", order.getId().toString(), order);
+        return Mono.deferContextual(ctx -> {
+            String correlationId = ctx.getOrDefault("X-Correlation-ID", UUID.randomUUID().toString());
+            return Mono.fromRunnable(() -> {
+                log.info("Publishing OrderCreated event [CorrelationID: {}] for order: {}", correlationId,
+                        order.getId());
+                org.apache.kafka.clients.producer.ProducerRecord<String, Object> record = new org.apache.kafka.clients.producer.ProducerRecord<>(
+                        "order-created", order.getId().toString(), order);
+                record.headers().add("X-Correlation-ID", correlationId.getBytes());
+                kafkaTemplate.send(record);
+            });
         }).then();
     }
 
     @Override
     public Mono<Void> publishOrderCancelled(Order order) {
-        return Mono.fromRunnable(() -> {
-            log.info("Publishing OrderCancelled event for order: {}", order.getId());
-            kafkaTemplate.send("order-cancelled", order.getId().toString(), order);
+        return Mono.deferContextual(ctx -> {
+            String correlationId = ctx.getOrDefault("X-Correlation-ID", UUID.randomUUID().toString());
+            return Mono.fromRunnable(() -> {
+                log.info("Publishing OrderCancelled event [CorrelationID: {}] for order: {}", correlationId,
+                        order.getId());
+                org.apache.kafka.clients.producer.ProducerRecord<String, Object> record = new org.apache.kafka.clients.producer.ProducerRecord<>(
+                        "order-cancelled", order.getId().toString(), order);
+                record.headers().add("X-Correlation-ID", correlationId.getBytes());
+                kafkaTemplate.send(record);
+            });
+        }).then();
+    }
+
+    @Override
+    public Mono<Void> publishInventoryValidated(Order order) {
+        return Mono.deferContextual(ctx -> {
+            String correlationId = ctx.getOrDefault("X-Correlation-ID", UUID.randomUUID().toString());
+            return Mono.fromRunnable(() -> {
+                log.info("Publishing InventoryValidated event [CorrelationID: {}] for order: {}", correlationId,
+                        order.getId());
+                org.apache.kafka.clients.producer.ProducerRecord<String, Object> record = new org.apache.kafka.clients.producer.ProducerRecord<>(
+                        "inventory-validated", order.getId().toString(), order);
+                record.headers().add("X-Correlation-ID", correlationId.getBytes());
+                kafkaTemplate.send(record);
+            });
         }).then();
     }
 }
