@@ -19,6 +19,26 @@ El sistema se divide en tres microservicios principales que se comunican de form
 - **Testcontainers** para pruebas de integración reales.
 - **JaCoCo** para métricas de cobertura de código.
 
+## 🧩 Diseño Orientado al Dominio (DDD)
+Para esta solución se han identificado los siguientes elementos tácticos de DDD:
+
+### Bounded Contexts
+1.  **Contexto de Órdenes**: Núcleo de la aplicación donde se gestiona el ciclo de vida y la consistencia de los pedidos.
+2.  **Contexto de Pagos**: Gestiona la interacción con pasarelas externas y el estado financiero de la orden.
+3.  **Contexto de Notificaciones/Auditoría**: Encargado de la persistencia histórica y comunicación con el cliente.
+
+### Agregados e Invariantes
+- **Order Aggregate**: La entidad `Order` actúa como Aggregate Root.
+    - **Invariante 1**: Una orden debe tener al menos un item para ser creada.
+    - **Invariante 2**: El monto total de la orden debe ser igual a la suma de `cantidad * precio` de sus items.
+    - **Invariante 3**: Solo se permiten transiciones de estado válidas (ej: de `PAID` no se puede volver a `PENDING`).
+
+### Eventos de Dominio
+- `OrderCreated`: Dispara la validación de inventario.
+- `InventoryValidated`: Dispara el proceso de cobro.
+- `PaymentProcessed`: Inicia el flujo de despacho o falla la orden.
+- `OrderCancelled`: Libera recursos o notifica el cese del flujo.
+
 ## 🛠️ Requisitos Previos
 - Docker y Docker Compose.
 - Java 21 JDK.
@@ -80,6 +100,8 @@ Contamos con registros detallados en `docs/ADRs/`:
 - **ADR-001**: Implementación de Clean Architecture.
 - **ADR-002**: Selección de Kafka vs RabbitMQ.
 - **ADR-003**: Patrón Saga Coreografiado para consistencia eventual.
+- **ADR-004**: Adopción de Programación Reactiva (Project Reactor).
+- **ADR-005**: MongoDB como Event Store para Auditoría.
 
 ## 📈 Trazabilidad y Observabilidad
 - **Correlation ID**: Todas las peticiones generan un header `X-Correlation-ID` que viaja por Kafka y se registra en los logs JSON.

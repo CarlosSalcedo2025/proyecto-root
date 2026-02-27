@@ -11,9 +11,10 @@
 - [x] **Documentación**: ADRs, Diagramas Mermaid (C4, ER, Sequence, State), Especificaciones OpenAPI completas para los 3 servicios y Colección de Postman.
 - [x] **Swagger UI**: Interfaces interactivas disponibles en cada microservicio para pruebas en vivo.
 
+- [x] **Calidad (Tests)**: Tests unitarios al 100% de cobertura en lógica de negocio. Tests de integración con **Testcontainers** implementados para validación E2E (infraestructura real).
+
 ## 2. Funcionalidades Pendientes / Mejoras
 - **Circuit Breaker**: Se considera para mejorar la resiliencia entre servicios.
-- **Tests de Integración con Testcontainers**: Pendientes de implementación tras completar el core.
 - **API Gateway**: Integración de un punto único de entrada.
 
 ## 3. Decisiones con más tiempo
