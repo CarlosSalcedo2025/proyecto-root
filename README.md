@@ -38,10 +38,20 @@ Se ha implementado **Clean Architecture (Hexagonal)** para asegurar el desacopla
 ### Order Service
 - `POST /api/v1/orders`: Crear orden.
 - `GET /api/v1/orders/{id}`: Consultar orden.
-- `GET /api/v1/orders?customerId=X`: Listar órdenes.
+- `GET /api/v1/orders?customerId=X&page=0&size=10`: Listar órdenes (con paginación).
 - `PATCH /api/v1/orders/{id}/cancel`: Cancelar orden.
-- `GET /api/v1/orders/{id}/events`: Historial de eventos.
+- `GET /api/v1/orders/{id}/events`: Historial de eventos (Auditoría/Event Sourcing).
+
+### Payment Service
+- `GET /api/v1/payments/{orderId}`: Consultar estado del pago.
+- `POST /api/v1/payments/{orderId}/retry`: Reintentar pago fallido.
+
+### Notification Service
+- `GET /api/v1/notifications?orderId=X`: Historial de notificaciones enviadas.
+
 
 ## Documentación adicional
-Los ADRs se encuentran en la carpeta `docs/ADRs/`.
-Diagramas y colecciones de Postman disponibles en `docs/`.
+- **ADRs**: Ubicados en `docs/ADRs/`.
+- **Diagramas (Mermaid)**: Ubicados en `docs/architecture/` (Componentes, Flujo, Estados, DB).
+- **Postman**: Colección disponible en `docs/api/postman-collection.json`.
+
