@@ -23,4 +23,20 @@ public class KafkaTopicConfiguration {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic inventoryValidatedTopic() {
+        return TopicBuilder.name("inventory-validated")
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic paymentFailedTopic() {
+        return TopicBuilder.name("payment-failed")
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
 }

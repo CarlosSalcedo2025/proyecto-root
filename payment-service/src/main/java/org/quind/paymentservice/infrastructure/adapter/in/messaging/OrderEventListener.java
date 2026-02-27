@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quind.paymentservice.infrastructure.adapter.out.messaging.PaymentEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.UUID;
@@ -15,17 +16,21 @@ public class OrderEventListener {
 
     private final PaymentEventPublisher publisher;
 
-    @KafkaListener(topics = "order-created", groupId = "payment-group")
-    public void handleOrderCreated(Object orderMessage) {
-        log.info("Received order-created event: {}", orderMessage);
-
-        // Simulation: Always succeed payment for now
-        // In a real scenario, we would extract orderId and amount
-        // For simplicity, let's assume message is a Map or JSON
+    @KafkaListener(topics = "inventory-validated", groupId = "payment-group")
+    public void handleInventoryValidated(Object orderMessage,
+            @Header("X-Correlation-ID") byte[] correlationIdBytes) {
+        String correlationId = new String(correlationIdBytes);
+        log.info("Received inventory-validated event [CorrelationID: {}]: {}", correlationId, orderMessage);
 
         String orderIdStr = extractOrderId(orderMessage);
         if (orderIdStr != null) {
-            publisher.publishPaymentProcessed(UUID.fromString(orderIdStr));
+            UUID orderId = UUID.fromString(orderIdStr);
+            // Simulación: Fallar aleatoriamente 1 de cada 4 veces para probar la Saga
+            if (Math.random() > 0.75) {
+                publisher.publishPaymentFailed(orderId, correlationId, "Fondos insuficientes o error de pasarela");
+            } else {
+                publisher.publishPaymentProcessed(orderId, correlationId);
+            }
         }
     }
 
