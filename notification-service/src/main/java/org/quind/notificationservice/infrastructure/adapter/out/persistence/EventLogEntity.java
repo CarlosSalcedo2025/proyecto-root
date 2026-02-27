@@ -20,4 +20,5 @@ public class EventLogEntity {
     private String aggregateId;
     private Object payload;
     private LocalDateTime timestamp;
+    private String correlationId;
 }
