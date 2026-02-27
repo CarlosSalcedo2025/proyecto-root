@@ -1,0 +1,42 @@
+openapi: 3.0.0
+info:
+  title: Notification Service API
+  version: 1.0.0
+  description: API for consulting sent notifications and event logs.
+paths:
+  /api/v1/notifications:
+    get:
+      summary: Get notifications for a specific order
+      parameters:
+        - name: orderId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of notifications/events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventLog'
+components:
+  schemas:
+    EventLog:
+      type: object
+      properties:
+        id:
+          type: string
+        aggregateId:
+          type: string
+        eventType:
+          type: string
+        payload:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        correlationId:
+          type: string

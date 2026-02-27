@@ -8,7 +8,8 @@
 - [x] **Event Sourcing & Auditoría**: Auditoría de eventos en MongoDB con **Correlación ID** para trazabilidad total.
 - [x] **Observabilidad**: Logs estructurados en **JSON** y Health Checks con Spring Boot Actuator.
 - [x] **Idempotencia**: Implementada en todos los consumidores de Kafka para evitar duplicados.
-- [x] **Documentación**: ADRs, Diagramas Mermaid (C4, ER, Sequence, State), Especificaciones OpenAPI y Colección de Postman.
+- [x] **Documentación**: ADRs, Diagramas Mermaid (C4, ER, Sequence, State), Especificaciones OpenAPI completas para los 3 servicios y Colección de Postman.
+- [x] **Swagger UI**: Interfaces interactivas disponibles en cada microservicio para pruebas en vivo.
 
 ## 2. Funcionalidades Pendientes / Mejoras
 - **Circuit Breaker**: Se considera para mejorar la resiliencia entre servicios.

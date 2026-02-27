@@ -1,57 +1,95 @@
-# PROYECTO: Sistema de Gestión de Órdenes E-commerce
+# E-commerce Order Management System (Arquitectura de Eventos)
 
-Este proyecto implementa un sistema distribuido para la gestión de órdenes, siguiendo una arquitectura orientada a eventos, programación reactiva y Clean Architecture.
+## 🚀 Descripción General
+Este proyecto es una implementación de un sistema de gestión de órdenes de alta escala, diseñado bajo los principios de **Arquitectura de Eventos (EDA)**, **Clean Architecture** y **Programación Reactiva**. El sistema orquestra un flujo complejo de pedidos, pagos y notificaciones de manera asíncrona y resiliente.
 
-## Arquitectura
+## 🏗️ Arquitectura Técnica
+El sistema se divide en tres microservicios principales que se comunican de forma asíncrona mediante **Apache Kafka**:
 
-Se ha implementado **Clean Architecture (Hexagonal)** para asegurar el desacoplamiento entre la lógica de negocio y la infraestructura.
+1.  **Order Service (Puerto 8080)**: Núcleo del negocio. Gestiona el ciclo de vida de la orden y orquestra la saga coreografiada.
+2.  **Payment Service (Puerto 8081)**: Simula una pasarela de pagos con lógica de reintentos y fallos aleatorios para probar la resiliencia.
+3.  **Notification Service (Puerto 8082)**: Auditoría y registro de eventos mediante Event Sourcing.
 
-### Tecnologías
-- **Java 21**
-- **Spring Boot 3.4.3**
-- **Spring WebFlux** (Programación Reactiva)
-- **Apache Kafka** (Broker de Mensajería)
-- **PostgreSQL + R2DBC** (Persistencia Transaccional)
-- **MongoDB Reactive** (Event Store y Auditoría)
-- **Docker & Docker Compose**
+### Stack Tecnológico
+- **Java 21** & **Spring Boot 3.4.3**
+- **Spring WebFlux** (Reactor) para I/O no bloqueante.
+- **Apache Kafka** como backbone de mensajería.
+- **PostgreSQL + R2DBC** para persistencia transaccional reactiva.
+- **MongoDB Reactive** para Event Store y logs de auditoría.
+- **Testcontainers** para pruebas de integración reales.
+- **JaCoCo** para métricas de cobertura de código.
 
-### Microservicios
-1. **Order Service (8080)**: Gestión de ciclo de vida de órdenes.
-2. **Payment Service (8081)**: Simulación de pagos asíncronos.
-3. **Notification Service (8082)**: Registro de eventos y auditoría.
+## 🛠️ Requisitos Previos
+- Docker y Docker Compose.
+- Java 21 JDK.
+- Maven 3.9+.
 
-## Cómo ejecutar
+## 🏁 Instalación y Ejecución
 
-1. Clona el repositorio.
-2. Asegúrate de tener Docker instalado.
-3. Ejecuta el entorno de infraestructura:
-   ```bash
-   docker-compose up -d
-   ```
-4. Ejecuta cada microservicio:
-   ```bash
-   mvn spring-boot:run
-   ```
+1.  **Levantar Infraestructura**:
+    ```bash
+    docker-compose up -d
+    ```
+    *Esto levantará: PostgreSQL, MongoDB, Kafka (Bitnami) y Kafdrop (UI para Kafka).*
 
-## Endpoints Principales
+2.  **Compilar y Ejecutar Servicios**:
+    Desde la raíz del proyecto, puedes ejecutar cada servicio:
+    ```bash
+    # En terminales separadas
+    cd order-service && mvn spring-boot:run
+    cd payment-service && mvn spring-boot:run
+    cd notification-service && mvn spring-boot:run
+    ```
 
-### Order Service
-- `POST /api/v1/orders`: Crear orden.
-- `GET /api/v1/orders/{id}`: Consultar orden.
-- `GET /api/v1/orders?customerId=X&page=0&size=10`: Listar órdenes (con paginación).
-- `PATCH /api/v1/orders/{id}/cancel`: Cancelar orden.
-- `GET /api/v1/orders/{id}/events`: Historial de eventos (Auditoría/Event Sourcing).
+3.  **Verificar Estado**:
+    - Order Health: `http://localhost:8080/actuator/health`
+    - Kafka UI (Kafdrop): `http://localhost:9000`
 
-### Payment Service
-- `GET /api/v1/payments/{orderId}`: Consultar estado del pago.
-- `POST /api/v1/payments/{orderId}/retry`: Reintentar pago fallido.
+## 🧪 Pruebas y Calidad
+### Ejecución de Tests
+```bash
+mvn test
+```
 
-### Notification Service
-- `GET /api/v1/notifications?orderId=X`: Historial de notificaciones enviadas.
+### Reporte de Cobertura (JaCoCo)
+Tras ejecutar los tests, el reporte se genera en:
+`order-service/target/site/jacoco/index.html`
 
+## 📖 Documentación de APIs (Swagger UI)
+Cada servicio cuenta con su propia interfaz de Swagger:
+- **Order Service**: [http://localhost:8080/webjars/swagger-ui/index.html](http://localhost:8080/webjars/swagger-ui/index.html)
+- **Payment Service**: [http://localhost:8081/webjars/swagger-ui/index.html](http://localhost:8081/webjars/swagger-ui/index.html)
+- **Notification Service**: [http://localhost:8082/webjars/swagger-ui/index.html](http://localhost:8082/webjars/swagger-ui/index.html)
 
-## Documentación adicional
-- **ADRs**: Ubicados en `docs/ADRs/`.
-- **Diagramas (Mermaid)**: Ubicados en `docs/architecture/` (Componentes, Flujo, Estados, DB).
-- **Postman**: Colección disponible en `docs/api/postman-collection.json`.
+### Ejemplos de Uso (Quick Start)
+**Crear Orden (`POST /api/v1/orders`)**
+```json
+{
+  "customerId": "user_789",
+  "items": [
+    { "productId": "PROD_001", "quantity": 2, "price": 50.0 }
+  ]
+}
+```
 
+**Consultar Eventos (`GET /api/v1/orders/{id}/events`)**
+Permite ver todo el historial de la Saga (Event Sourcing).
+
+## 🛡️ Decisiones de Diseño (ADRs)
+Contamos con registros detallados en `docs/ADRs/`:
+- **ADR-001**: Implementación de Clean Architecture.
+- **ADR-002**: Selección de Kafka vs RabbitMQ.
+- **ADR-003**: Patrón Saga Coreografiado para consistencia eventual.
+
+## 📈 Trazabilidad y Observabilidad
+- **Correlation ID**: Todas las peticiones generan un header `X-Correlation-ID` que viaja por Kafka y se registra en los logs JSON.
+- **Logs Estructurados**: Salida en formato GELF/JSON optimizada para ELK Stack.
+
+## 🔮 Roadmap y Mejoras Futuras
+1.  **API Gateway**: Implementar Spring Cloud Gateway con Rate Limiting.
+2.  **Outbox Pattern**: Garantizar atomicidad absoluta entre DB y Kafka.
+3.  **Seguridad**: Integrar Keycloak para OAuth2/JWT.
+4.  **Circuit Breaker**: Resilience4j para el fallback de la pasarela de pagos.
+
+---
+**Desarrollado para Prueba Técnica Senior Java.**
