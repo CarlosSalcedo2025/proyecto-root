@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.quind.orderservice.domain.model.Order;
 import org.quind.orderservice.domain.model.OrderStatus;
+import org.quind.orderservice.domain.port.out.OrderEventPublisher;
 import org.quind.orderservice.domain.port.out.OrderRepository;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -23,6 +24,9 @@ class CancelOrderUseCaseTest {
 
     @Mock
     private OrderRepository repository;
+
+    @Mock
+    private OrderEventPublisher eventPublisher;
 
     @InjectMocks
     private CancelOrderUseCaseImpl useCase;
@@ -44,6 +48,7 @@ class CancelOrderUseCaseTest {
 
         when(repository.findById(orderId)).thenReturn(Mono.just(order));
         when(repository.save(any(Order.class))).thenReturn(Mono.just(order));
+        when(eventPublisher.publishOrderCancelled(any(Order.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(useCase.cancel(orderId))
                 .expectNextMatches(o -> o.getStatus() == OrderStatus.CANCELLED)

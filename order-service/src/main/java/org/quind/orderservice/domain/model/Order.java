@@ -13,10 +13,21 @@ public class Order {
     private UUID id;
     private String customerId;
     private List<OrderItem> items;
-    private BigDecimal totalAmount;
-    private OrderStatus status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @Builder.Default
+    private OrderStatus status = OrderStatus.PENDING;
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    public BigDecimal getTotalAmount() {
+        if (items == null || items.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return items.stream()
+                .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
     public void cancel() {
         if (this.status != OrderStatus.PENDING && this.status != OrderStatus.CONFIRMED) {

@@ -11,7 +11,6 @@ import org.quind.orderservice.domain.port.out.OrderRepository;
 import org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -39,7 +38,6 @@ class CreateOrderUseCaseTest {
         Order order = Order.builder()
                 .customerId("customer-1")
                 .items(new ArrayList<>())
-                .totalAmount(BigDecimal.TEN)
                 .build();
 
         when(orderRepository.save(any(Order.class))).thenReturn(Mono.just(order));

@@ -18,7 +18,7 @@ class OrderTest {
 
         assertEquals(OrderStatus.PENDING, order.getStatus());
         assertNotNull(order.getCreatedAt());
-        assertEquals(new BigDecimal("20.0"), order.getTotalAmount());
+        assertTrue(new BigDecimal("20.0").compareTo(order.getTotalAmount()) == 0);
     }
 
     @Test

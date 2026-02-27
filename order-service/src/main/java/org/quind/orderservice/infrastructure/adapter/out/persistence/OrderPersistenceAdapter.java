@@ -49,7 +49,6 @@ public class OrderPersistenceAdapter implements OrderRepository {
                                                 .map(items -> Order.builder()
                                                                 .id(e.getId())
                                                                 .customerId(e.getCustomerId())
-                                                                .totalAmount(e.getTotalAmount())
                                                                 .status(e.getStatus())
                                                                 .createdAt(e.getCreatedAt())
                                                                 .updatedAt(e.getUpdatedAt())
