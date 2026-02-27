@@ -5,6 +5,19 @@ spring:
   application:
     name: order-service
   
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,metrics,info,prometheus"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  
   # R2DBC PostgreSQL
   r2dbc:
     url: r2dbc:postgresql://localhost:5432/orders_db
