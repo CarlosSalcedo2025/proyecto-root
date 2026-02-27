@@ -19,11 +19,31 @@ public class Order {
     private LocalDateTime updatedAt;
 
     public void cancel() {
-        if (this.status == OrderStatus.PENDING || this.status == OrderStatus.CONFIRMED) {
-            this.status = OrderStatus.CANCELLED;
-            this.updatedAt = LocalDateTime.now();
-        } else {
-            throw new IllegalStateException("Order can only be cancelled in PENDING or CONFIRMED status");
+        if (this.status != OrderStatus.PENDING && this.status != OrderStatus.CONFIRMED) {
+            throw new IllegalStateException("La orden solo puede ser cancelada en estado PENDING o CONFIRMED");
         }
+        this.status = OrderStatus.CANCELLED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markAsConfirmed() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new IllegalStateException("Solo las órdenes PENDING pueden ser confirmadas");
+        }
+        this.status = OrderStatus.CONFIRMED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markAsPaid() {
+        if (this.status != OrderStatus.CONFIRMED && this.status != OrderStatus.PAYMENT_PROCESSING) {
+            throw new IllegalStateException("La orden debe estar CONFIRMED para marcarse como pagada");
+        }
+        this.status = OrderStatus.PAID;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markAsFailed() {
+        this.status = OrderStatus.FAILED;
+        this.updatedAt = LocalDateTime.now();
     }
 }
