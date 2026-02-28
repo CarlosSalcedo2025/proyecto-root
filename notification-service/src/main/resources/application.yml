@@ -5,19 +5,10 @@ spring:
   application:
     name: notification-service
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "health,info"
-  endpoint:
-    health:
-      show-details: always
-
   # MongoDB Reactive
   data:
     mongodb:
-      uri: mongodb://admin:password@localhost:27017/notifications_db?authSource=admin
+      uri: mongodb://admin:password@localhost:27018/notifications_db?authSource=admin
 
   # Kafka
   kafka:
@@ -28,6 +19,15 @@ management:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+  endpoint:
+    health:
+      show-details: always
 
 logging:
   level:

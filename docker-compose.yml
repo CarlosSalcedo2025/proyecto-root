@@ -12,14 +12,14 @@ services:
     volumes:
       - ./infrastructure/init-db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   # MongoDB (Event Store y Auditoría)
   mongodb:
     image: mongo:6.0
     container_name: mongodb-store
     ports:
-      - "27017:27017"
+      - "27018:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
