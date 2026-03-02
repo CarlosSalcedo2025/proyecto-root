@@ -19,12 +19,15 @@ public class GlobalEventListener {
 
     @KafkaListener(topics = { "order-created", "order-cancelled", "inventory-validated", "payment-processed",
             "payment-failed" }, groupId = "notification-group")
-    public void handleEvents(Object message,
+    public void handleEvents(
+            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> message,
             @org.springframework.messaging.handler.annotation.Header(org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC) String topic,
-            @org.springframework.messaging.handler.annotation.Header("X-Correlation-ID") byte[] correlationIdBytes) {
-        String correlationId = new String(correlationIdBytes);
-        log.info("Notification Service received event [CorrelationID: {}] from topic {}: {}", correlationId, topic,
-                message);
+            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+
+        String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
+                : java.util.UUID.randomUUID().toString();
+
+        log.info("Notification Service received event from topic {}. Payload: {}", topic, message);
 
         String aggregateId = extractAggregateId(message);
 
@@ -48,7 +51,10 @@ public class GlobalEventListener {
 
                     return repository.save(eventLog);
                 })
-                .subscribe();
+                .doOnError(e -> log.error("Error procesando notificación: {}", e.getMessage()))
+                .subscribe(
+                        v -> log.debug("Notificación persistida para evento {}", topic),
+                        e -> log.error("Fallo final en flujo de notificación: ", e));
     }
 
     private String extractAggregateId(Object message) {

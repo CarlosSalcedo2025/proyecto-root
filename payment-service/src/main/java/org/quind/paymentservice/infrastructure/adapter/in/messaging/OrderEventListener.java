@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quind.paymentservice.infrastructure.adapter.out.messaging.PaymentEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.UUID;
@@ -17,17 +16,26 @@ public class OrderEventListener {
     private final PaymentEventPublisher publisher;
 
     @KafkaListener(topics = "inventory-validated", groupId = "payment-group")
-    public void handleInventoryValidated(Object orderMessage,
-            @Header("X-Correlation-ID") byte[] correlationIdBytes) {
-        String correlationId = new String(correlationIdBytes);
+    public void handleInventoryValidated(
+            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> orderMessage,
+            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+        String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
+                : java.util.UUID.randomUUID().toString();
         log.info("Received inventory-validated event [CorrelationID: {}]: {}", correlationId, orderMessage);
 
         String orderIdStr = extractOrderId(orderMessage);
         if (orderIdStr != null) {
             UUID orderId = UUID.fromString(orderIdStr);
-            // Simulación: Fallar aleatoriamente 1 de cada 4 veces para probar la Saga
-            if (Math.random() > 0.75) {
-                publisher.publishPaymentFailed(orderId, correlationId, "Fondos insuficientes o error de pasarela");
+            // Deterministic trigger: If customerId is "FAIL_USER", always fail.
+            // Otherwise, keep the 25% random chance for Saga testing.
+            String customerId = (String) orderMessage.get("customerId");
+
+            if ("FAIL_USER".equalsIgnoreCase(customerId)) {
+                log.warn("FORCED FAILURE: Failing payment for customer FAIL_USER [OrderId: {}]", orderId);
+                publisher.publishPaymentFailed(orderId, correlationId, "Transacción declinada por el banco (Simulada)");
+            } else if (Math.random() > 0.75) {
+                log.warn("RANDOM FAILURE: Failing payment for testing purposes [OrderId: {}]", orderId);
+                publisher.publishPaymentFailed(orderId, correlationId, "Fondos insuficientes (Simulado)");
             } else {
                 publisher.publishPaymentProcessed(orderId, correlationId);
             }

@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.quind.orderservice.domain.port.out.OrderEventPublisher;
 import org.quind.orderservice.domain.port.out.OrderRepository;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 import java.util.UUID;
 
@@ -21,9 +19,13 @@ public class OrderEventListener {
     private final org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository eventRepository;
 
     @KafkaListener(topics = "order-created", groupId = "order-group")
-    public void handleOrderCreated(Object message, @Header(KafkaHeaders.RECEIVED_KEY) String key,
-            @Header("X-Correlation-ID") byte[] correlationIdBytes) {
-        String correlationId = new String(correlationIdBytes);
+    public void handleOrderCreated(
+            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> message,
+            @org.springframework.messaging.handler.annotation.Header(org.springframework.kafka.support.KafkaHeaders.RECEIVED_KEY) String key,
+            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+
+        String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
+                : java.util.UUID.randomUUID().toString();
         log.info("Received order-created event [CorrelationID: {}] for order: {}", correlationId, key);
 
         UUID orderId = UUID.fromString(key);

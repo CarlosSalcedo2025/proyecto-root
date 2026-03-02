@@ -19,9 +19,11 @@ public class PaymentEventListener {
     private final org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository eventRepository;
 
     @KafkaListener(topics = "payment-processed", groupId = "order-group")
-    public void handlePaymentProcessed(Object message,
-            @org.springframework.messaging.handler.annotation.Header("X-Correlation-ID") byte[] correlationIdBytes) {
-        String correlationId = new String(correlationIdBytes);
+    public void handlePaymentProcessed(
+            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> message,
+            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+        String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
+                : java.util.UUID.randomUUID().toString();
         log.info("Recibido payment-processed [CorrelationID: {}]", correlationId);
 
         String orderIdStr = extractOrderId(message);
@@ -31,9 +33,11 @@ public class PaymentEventListener {
     }
 
     @KafkaListener(topics = "payment-failed", groupId = "order-group")
-    public void handlePaymentFailed(Object message,
-            @org.springframework.messaging.handler.annotation.Header("X-Correlation-ID") byte[] correlationIdBytes) {
-        String correlationId = new String(correlationIdBytes);
+    public void handlePaymentFailed(
+            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> message,
+            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+        String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
+                : java.util.UUID.randomUUID().toString();
         log.error("Recibido payment-failed [CorrelationID: {}]", correlationId);
 
         String orderIdStr = extractOrderId(message);
