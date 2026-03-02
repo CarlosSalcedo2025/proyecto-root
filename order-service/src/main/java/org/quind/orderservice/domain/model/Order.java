@@ -2,6 +2,8 @@ package org.quind.orderservice.domain.model;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,6 +11,8 @@ import java.util.UUID;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Order {
     private UUID id;
     private String customerId;
@@ -30,6 +34,10 @@ public class Order {
     }
 
     public void cancel() {
+        if (this.status == OrderStatus.CANCELLED)
+            return;
+        if (this.status == OrderStatus.FAILED)
+            return;
         if (this.status != OrderStatus.PENDING && this.status != OrderStatus.CONFIRMED) {
             throw new IllegalStateException("La orden solo puede ser cancelada en estado PENDING o CONFIRMED");
         }
@@ -38,6 +46,8 @@ public class Order {
     }
 
     public void markAsConfirmed() {
+        if (this.status == OrderStatus.CONFIRMED)
+            return;
         if (this.status != OrderStatus.PENDING) {
             throw new IllegalStateException("Solo las órdenes PENDING pueden ser confirmadas");
         }
@@ -46,6 +56,8 @@ public class Order {
     }
 
     public void markAsPaid() {
+        if (this.status == OrderStatus.PAID)
+            return;
         if (this.status != OrderStatus.CONFIRMED && this.status != OrderStatus.PAYMENT_PROCESSING) {
             throw new IllegalStateException("La orden debe estar CONFIRMED para marcarse como pagada");
         }
@@ -54,6 +66,8 @@ public class Order {
     }
 
     public void markAsShipped() {
+        if (this.status == OrderStatus.SHIPPED)
+            return;
         if (this.status != OrderStatus.PAID) {
             throw new IllegalStateException("Solo las órdenes PAID pueden marcarse como enviadas");
         }
@@ -62,6 +76,8 @@ public class Order {
     }
 
     public void markAsDelivered() {
+        if (this.status == OrderStatus.DELIVERED)
+            return;
         if (this.status != OrderStatus.SHIPPED) {
             throw new IllegalStateException("Solo las órdenes SHIPPED pueden marcarse como entregadas");
         }
@@ -70,6 +86,8 @@ public class Order {
     }
 
     public void markAsFailed() {
+        if (this.status == OrderStatus.FAILED)
+            return;
         this.status = OrderStatus.FAILED;
         this.updatedAt = LocalDateTime.now();
     }

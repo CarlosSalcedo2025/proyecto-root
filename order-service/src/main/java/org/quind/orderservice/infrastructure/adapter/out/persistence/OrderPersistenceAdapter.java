@@ -19,26 +19,42 @@ public class OrderPersistenceAdapter implements OrderRepository {
 
         @Override
         public Mono<Order> save(Order order) {
-                OrderEntity entity = OrderEntity.builder()
-                                .id(order.getId())
-                                .customerId(order.getCustomerId())
-                                .totalAmount(order.getTotalAmount())
-                                .status(order.getStatus())
-                                .createdAt(order.getCreatedAt())
-                                .updatedAt(order.getUpdatedAt())
-                                .build();
+                return repository.existsById(order.getId())
+                                .flatMap(exists -> {
+                                        OrderEntity entity = OrderEntity.builder()
+                                                        .id(order.getId())
+                                                        .customerId(order.getCustomerId())
+                                                        .totalAmount(order.getTotalAmount())
+                                                        .status(order.getStatus())
+                                                        .createdAt(order.getCreatedAt())
+                                                        .updatedAt(order.getUpdatedAt())
+                                                        .isNew(!exists)
+                                                        .build();
 
-                return repository.save(entity)
-                                .flatMap(savedOrder -> {
-                                        Flux<OrderItemEntity> itemEntities = Flux.fromIterable(order.getItems())
-                                                        .map(item -> OrderItemEntity.builder()
-                                                                        .orderId(savedOrder.getId())
-                                                                        .productId(item.getProductId())
-                                                                        .quantity(item.getQuantity())
-                                                                        .price(item.getPrice())
-                                                                        .build());
-                                        return itemRepository.saveAll(itemEntities).collectList()
-                                                        .thenReturn(order);
+                                        return repository.save(entity)
+                                                        .flatMap(savedOrder -> {
+                                                                if (exists) {
+                                                                        return Mono.just(order);
+                                                                }
+                                                                Flux<OrderItemEntity> itemEntities = Flux
+                                                                                .fromIterable(order.getItems() == null
+                                                                                                ? java.util.Collections
+                                                                                                                .emptyList()
+                                                                                                : order.getItems())
+                                                                                .map(item -> OrderItemEntity.builder()
+                                                                                                .orderId(savedOrder
+                                                                                                                .getId())
+                                                                                                .productId(item.getProductId())
+                                                                                                .quantity(item.getQuantity())
+                                                                                                .price(item.getPrice())
+                                                                                                .build());
+                                                                // Assuming items are replacing old ones, but to be
+                                                                // simple we save them. Note: In real scenarios,
+                                                                // handling item updates would be more complex.
+                                                                return itemRepository.saveAll(itemEntities)
+                                                                                .collectList()
+                                                                                .thenReturn(order);
+                                                        });
                                 });
         }
 
