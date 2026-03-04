@@ -6,9 +6,13 @@ import org.quind.notificationservice.infrastructure.adapter.out.persistence.Even
 import org.quind.notificationservice.infrastructure.adapter.out.persistence.MongoEventLogRepository;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.kafka.support.KafkaHeaders;
 import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -20,12 +24,12 @@ public class GlobalEventListener {
     @KafkaListener(topics = { "order-created", "order-cancelled", "inventory-validated", "payment-processed",
             "payment-failed" }, groupId = "notification-group")
     public void handleEvents(
-            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> message,
-            @org.springframework.messaging.handler.annotation.Header(org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC) String topic,
-            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+            @Payload Map<String, Object> message,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
 
         String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
-                : java.util.UUID.randomUUID().toString();
+                : UUID.randomUUID().toString();
 
         log.info("Notification Service received event from topic {}. Payload: {}", topic, message);
 

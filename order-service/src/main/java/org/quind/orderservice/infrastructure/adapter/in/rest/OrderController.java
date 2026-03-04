@@ -10,6 +10,9 @@ import org.quind.orderservice.infrastructure.adapter.in.rest.dto.OrderRequest;
 import org.quind.orderservice.infrastructure.adapter.in.rest.mapper.OrderRestMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity;
+import org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import java.util.UUID;
 
@@ -21,7 +24,7 @@ public class OrderController {
     private final CreateOrderUseCase createOrderUseCase;
     private final CancelOrderUseCase cancelOrderUseCase;
     private final GetOrderUseCase getOrderUseCase;
-    private final org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository eventRepository;
+    private final MongoOrderEventRepository eventRepository;
     private final OrderRestMapper mapper;
 
     @PostMapping
@@ -36,7 +39,7 @@ public class OrderController {
     }
 
     @GetMapping
-    public reactor.core.publisher.Flux<Order> listOrders(
+    public Flux<Order> listOrders(
             @RequestParam String customerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -49,7 +52,7 @@ public class OrderController {
     }
 
     @GetMapping("/{id}/events")
-    public reactor.core.publisher.Flux<org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity> getEvents(
+    public Flux<OrderEventEntity> getEvents(
             @PathVariable String id) {
         return eventRepository.findByOrderId(id);
     }

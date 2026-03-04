@@ -5,9 +5,20 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.quind.orderservice.domain.port.out.OrderEventPublisher;
 import org.quind.orderservice.domain.port.out.OrderRepository;
+import org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository;
+import org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 import java.util.UUID;
+
+import static java.time.LocalDateTime.now;
+import static java.util.UUID.randomUUID;
+import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_KEY;
+import static reactor.core.publisher.Mono.empty;
 
 @Component
 @RequiredArgsConstructor
@@ -16,16 +27,16 @@ public class OrderEventListener {
 
     private final OrderRepository orderRepository;
     private final OrderEventPublisher eventPublisher;
-    private final org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository eventRepository;
+    private final MongoOrderEventRepository eventRepository;
 
     @KafkaListener(topics = "order-created", groupId = "order-group")
     public void handleOrderCreated(
-            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> message,
-            @org.springframework.messaging.handler.annotation.Header(org.springframework.kafka.support.KafkaHeaders.RECEIVED_KEY) String key,
-            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+            @Payload Map<String, Object> message,
+            @Header(RECEIVED_KEY) String key,
+            @Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
 
         String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
-                : java.util.UUID.randomUUID().toString();
+                : randomUUID().toString();
         log.info("Received order-created event [CorrelationID: {}] for order: {}", correlationId, key);
 
         UUID orderId = UUID.fromString(key);
@@ -36,7 +47,7 @@ public class OrderEventListener {
                 .flatMap(exists -> {
                     if (Boolean.TRUE.equals(exists)) {
                         log.warn("Orden {} ya procesada (idempotencia).", key);
-                        return reactor.core.publisher.Mono.empty();
+                        return empty();
                     }
 
                     return orderRepository.findById(orderId)
@@ -46,12 +57,12 @@ public class OrderEventListener {
                                 return orderRepository.save(order);
                             })
                             .flatMap(confirmedOrder -> {
-                                org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity event = org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity
+                                OrderEventEntity event = OrderEventEntity
                                         .builder()
                                         .orderId(confirmedOrder.getId().toString())
                                         .eventType("ORDER_CONFIRMED")
                                         .payload(confirmedOrder)
-                                        .timestamp(java.time.LocalDateTime.now())
+                                        .timestamp(now())
                                         .build();
                                 return eventRepository.save(event)
                                         .then(eventPublisher.publishInventoryValidated(confirmedOrder)

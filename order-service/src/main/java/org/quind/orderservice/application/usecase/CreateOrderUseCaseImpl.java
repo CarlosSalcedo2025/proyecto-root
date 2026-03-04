@@ -6,6 +6,8 @@ import org.quind.orderservice.domain.model.OrderStatus;
 import org.quind.orderservice.domain.port.in.CreateOrderUseCase;
 import org.quind.orderservice.domain.port.out.OrderEventPublisher;
 import org.quind.orderservice.domain.port.out.OrderRepository;
+import org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository;
+import org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
@@ -17,7 +19,7 @@ public class CreateOrderUseCaseImpl implements CreateOrderUseCase {
 
     private final OrderRepository orderRepository;
     private final OrderEventPublisher eventPublisher;
-    private final org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository eventRepository;
+    private final MongoOrderEventRepository eventRepository;
 
     @Override
     public Mono<Order> create(Order order) {
@@ -28,7 +30,7 @@ public class CreateOrderUseCaseImpl implements CreateOrderUseCase {
 
         return orderRepository.save(order)
                 .flatMap(savedOrder -> {
-                    org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity event = org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity
+                    OrderEventEntity event = OrderEventEntity
                             .builder()
                             .orderId(savedOrder.getId().toString())
                             .eventType("ORDER_CREATED")

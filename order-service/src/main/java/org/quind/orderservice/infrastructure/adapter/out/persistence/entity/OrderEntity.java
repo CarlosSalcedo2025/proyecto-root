@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.data.domain.Persistable;
+import org.springframework.data.annotation.Transient;
 
 @Data
 @Builder
@@ -27,7 +28,7 @@ public class OrderEntity implements Persistable<UUID> {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @org.springframework.data.annotation.Transient
+    @Transient
     @Builder.Default
     private boolean isNew = true;
 

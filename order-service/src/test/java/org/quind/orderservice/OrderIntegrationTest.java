@@ -11,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
+import org.quind.orderservice.domain.model.Order;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
@@ -48,7 +50,7 @@ class OrderIntegrationTest extends BaseIntegrationTest {
     @DisplayName("Escenario E2E: Obtener 404 para orden inexistente")
     void shouldReturn404ForMissingOrder() {
         webTestClient.get()
-                .uri("/api/v1/orders/" + java.util.UUID.randomUUID())
+                .uri("/api/v1/orders/" + UUID.randomUUID())
                 .exchange()
                 .expectStatus().isNotFound();
     }
@@ -63,7 +65,7 @@ class OrderIntegrationTest extends BaseIntegrationTest {
                         .build())
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(org.quind.orderservice.domain.model.Order.class);
+                .expectBodyList(Order.class);
     }
 
     @Test
@@ -73,7 +75,7 @@ class OrderIntegrationTest extends BaseIntegrationTest {
         // si no existe
         // o validamos el cambio de estado si tuviéramos una persistida en el setup.
         webTestClient.patch()
-                .uri("/api/v1/orders/" + java.util.UUID.randomUUID() + "/cancel")
+                .uri("/api/v1/orders/" + UUID.randomUUID() + "/cancel")
                 .exchange()
                 .expectStatus().isNotFound();
     }
@@ -81,7 +83,7 @@ class OrderIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Escenario E2E: Consultar auditoría de eventos")
     void shouldFetchEventAudit() {
-        String randomId = java.util.UUID.randomUUID().toString();
+        String randomId = UUID.randomUUID().toString();
         webTestClient.get()
                 .uri("/api/v1/orders/" + randomId + "/events")
                 .exchange()

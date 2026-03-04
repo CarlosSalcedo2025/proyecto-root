@@ -5,9 +5,13 @@ import org.quind.orderservice.domain.model.Order;
 import org.quind.orderservice.domain.port.out.OrderRepository;
 import org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEntity;
 import org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderItemEntity;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+import org.quind.orderservice.domain.model.OrderItem;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.util.Collections;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 @Component
@@ -38,8 +42,7 @@ public class OrderPersistenceAdapter implements OrderRepository {
                                                                 }
                                                                 Flux<OrderItemEntity> itemEntities = Flux
                                                                                 .fromIterable(order.getItems() == null
-                                                                                                ? java.util.Collections
-                                                                                                                .emptyList()
+                                                                                                ? Collections.emptyList()
                                                                                                 : order.getItems())
                                                                                 .map(item -> OrderItemEntity.builder()
                                                                                                 .orderId(savedOrder
@@ -69,22 +72,19 @@ public class OrderPersistenceAdapter implements OrderRepository {
                                                                 .createdAt(e.getCreatedAt())
                                                                 .updatedAt(e.getUpdatedAt())
                                                                 .items(items.stream()
-                                                                                .map(i -> org.quind.orderservice.domain.model.OrderItem
-                                                                                                .builder()
+                                                                                .map(i -> OrderItem.builder()
                                                                                                 .productId(i.getProductId())
                                                                                                 .quantity(i.getQuantity())
                                                                                                 .price(i.getPrice())
                                                                                                 .build())
-                                                                                .collect(java.util.stream.Collectors
-                                                                                                .toList()))
+                                                                                .collect(Collectors.toList()))
                                                                 .build()));
         }
 
         @Override
         public Flux<Order> findByCustomerId(String customerId, int page, int size) {
                 return repository
-                                .findByCustomerId(customerId,
-                                                org.springframework.data.domain.PageRequest.of(page, size))
+                                .findByCustomerId(customerId, PageRequest.of(page, size))
                                 .flatMap(e -> findById(e.getId()));
         }
 }

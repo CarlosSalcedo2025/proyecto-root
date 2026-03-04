@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.quind.paymentservice.infrastructure.adapter.out.messaging.PaymentEventPublisher;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.UUID;
@@ -17,10 +19,10 @@ public class OrderEventListener {
 
     @KafkaListener(topics = "inventory-validated", groupId = "payment-group")
     public void handleInventoryValidated(
-            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> orderMessage,
-            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+            @Payload Map<String, Object> orderMessage,
+            @Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
         String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
-                : java.util.UUID.randomUUID().toString();
+                : UUID.randomUUID().toString();
         log.info("Received inventory-validated event [CorrelationID: {}]: {}", correlationId, orderMessage);
 
         String orderIdStr = extractOrderId(orderMessage);

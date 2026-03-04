@@ -5,10 +5,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.quind.orderservice.domain.model.Order;
 import org.quind.orderservice.domain.model.OrderStatus;
 import org.quind.orderservice.domain.port.out.OrderRepository;
+import org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository;
+import org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.UUID;
+import java.time.LocalDateTime;
+import reactor.core.publisher.Mono;
+import static java.time.Duration.ofSeconds;
+import static reactor.core.publisher.Mono.delay;
+import static reactor.core.publisher.Mono.just;
 
 @Component
 @RequiredArgsConstructor
@@ -16,14 +25,14 @@ import java.util.UUID;
 public class PaymentEventListener {
 
     private final OrderRepository orderRepository;
-    private final org.quind.orderservice.infrastructure.adapter.out.persistence.MongoOrderEventRepository eventRepository;
+    private final MongoOrderEventRepository eventRepository;
 
     @KafkaListener(topics = "payment-processed", groupId = "order-group")
     public void handlePaymentProcessed(
-            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> message,
-            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+            @Payload Map<String, Object> message,
+            @Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
         String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
-                : java.util.UUID.randomUUID().toString();
+                : UUID.randomUUID().toString();
         log.info("Recibido payment-processed [CorrelationID: {}]", correlationId);
 
         String orderIdStr = extractOrderId(message);
@@ -34,10 +43,10 @@ public class PaymentEventListener {
 
     @KafkaListener(topics = "payment-failed", groupId = "order-group")
     public void handlePaymentFailed(
-            @org.springframework.messaging.handler.annotation.Payload java.util.Map<String, Object> message,
-            @org.springframework.messaging.handler.annotation.Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
+            @Payload Map<String, Object> message,
+            @Header(value = "X-Correlation-ID", required = false) byte[] correlationIdBytes) {
         String correlationId = (correlationIdBytes != null) ? new String(correlationIdBytes)
-                : java.util.UUID.randomUUID().toString();
+                : UUID.randomUUID().toString();
         log.error("Recibido payment-failed [CorrelationID: {}]", correlationId);
 
         String orderIdStr = extractOrderId(message);
@@ -53,7 +62,7 @@ public class PaymentEventListener {
                 .flatMap(exists -> {
                     if (Boolean.TRUE.equals(exists)) {
                         log.warn("Evento {} ya procesado para orden {}. Saltando.", eventType, orderId);
-                        return reactor.core.publisher.Mono.empty();
+                        return Mono.empty();
                     }
 
                     return orderRepository.findById(orderId)
@@ -72,14 +81,14 @@ public class PaymentEventListener {
                             })
                             .flatMap(order -> {
                                 if (order.getStatus() == OrderStatus.PAID) {
-                                    return reactor.core.publisher.Mono.delay(java.time.Duration.ofSeconds(2))
+                                    return delay(ofSeconds(2))
                                             .then(orderRepository.findById(orderId))
                                             .flatMap(o -> {
                                                 o.markAsShipped();
                                                 return orderRepository.save(o);
                                             })
                                             .flatMap(shipped -> saveEvent(shipped, "ORDER_SHIPPED").thenReturn(shipped))
-                                            .delayElement(java.time.Duration.ofSeconds(2))
+                                            .delayElement(ofSeconds(2))
                                             .flatMap(shipped -> {
                                                 shipped.markAsDelivered();
                                                 return orderRepository.save(shipped);
@@ -87,21 +96,21 @@ public class PaymentEventListener {
                                             .flatMap(delivered -> saveEvent(delivered, "ORDER_DELIVERED")
                                                     .thenReturn(delivered));
                                 }
-                                return reactor.core.publisher.Mono.just(order);
+                                return just(order);
                             });
                 })
                 .doOnSuccess(v -> log.info("Actualización de flujo de orden {} completada.", orderId))
                 .subscribe();
     }
 
-    private reactor.core.publisher.Mono<org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity> saveEvent(
+    private Mono<OrderEventEntity> saveEvent(
             Order order, String eventType) {
-        org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity event = org.quind.orderservice.infrastructure.adapter.out.persistence.entity.OrderEventEntity
+        OrderEventEntity event = OrderEventEntity
                 .builder()
                 .orderId(order.getId().toString())
                 .eventType(eventType)
                 .payload(order)
-                .timestamp(java.time.LocalDateTime.now())
+                .timestamp(LocalDateTime.now())
                 .build();
         return eventRepository.save(event);
     }
